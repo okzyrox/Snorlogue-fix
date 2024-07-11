@@ -63,7 +63,7 @@ func toIntSelectField(value: Option[int64], fieldName: string, options: var seq[
   FormField(name: fieldName, kind: FormFieldKind.INTSELECT, intSeqVal: value, intOptions: options)
 
 # Disabled as a compiler bug causes this proc to be chosen also for string and int types instead of their appropriate overloads
-func toFormField*[T: enum or range](value: Option[T], fieldName: string): FormField =
+func toFormField*[T: enum](value: Option[enum], fieldName: string): FormField =
   ## Converts an enum or range field on Model into a select
   ## `FormField<fieldTypes.html#FormField>`_ with int values.
   ##
@@ -79,6 +79,8 @@ func toFormField*[T: enum or range](value: Option[T], fieldName: string): FormFi
     # `type mismatch: got 'TaintedString' for 'val' but expected 'int64'`
     formFieldValue = value.map(val => val.int64)
 
+    toIntSelectField(formFieldValue, fieldName, options)
+
   elif T is range:
     const rangeName = T.name
     for rangeVal in T.low..T.high:
@@ -86,7 +88,9 @@ func toFormField*[T: enum or range](value: Option[T], fieldName: string): FormFi
 
     formFieldValue = value.map(val => val.int64)
 
-  toIntSelectField(formFieldValue, fieldName, options)
+    toIntSelectField(formFieldValue, fieldName, options)
+  else:
+    toFormField[T](value, fieldName)
 
 func toFormField*[T](value: T, fieldName: string): FormField =
   ## Helper proc to enable converting non-optional fields into
