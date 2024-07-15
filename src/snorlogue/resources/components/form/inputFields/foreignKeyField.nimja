@@ -1,0 +1,24 @@
+<div class="mb-3">
+  <label for="{{fieldName}}" class="form-label"> {{fieldName.capitalizeAscii()}} </label>
+
+  <select 
+  class="form-select" 
+  id="{{fieldName}}" 
+  name="{{fieldName}}" 
+  form="form" 
+  aria-label="Select {{fieldName}}"
+  {% if isRequired %} required {% endif %}
+  >
+    <option  value="" 
+    {% if not isUpdateForm or value.isNone() %} selected {% endif %}> 
+      ------ 
+    </option>
+
+    {% for model in models %}
+      <option value="{{model.id}}"
+      {% if isUpdateForm and value.isSome() and value.get().id == model.id %} selected {% endif %}>
+        {{$ model}}
+      </option>
+    {% endfor %}
+  </select>
+</div>

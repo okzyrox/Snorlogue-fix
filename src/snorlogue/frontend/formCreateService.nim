@@ -62,6 +62,12 @@ func toIntSelectField(value: Option[int64], fieldName: string, options: var seq[
   
   FormField(name: fieldName, kind: FormFieldKind.INTSELECT, intSeqVal: value, intOptions: options)
 
+func toForeignKeySelectField[T: Model](value: T, fieldName: string, options: var seq[
+    ForeignKeyOption]): FormField =
+  options.sort((opt1, opt2: ForeignKeyOption) => cmp(opt1.id, opt2.id))
+  
+  FormField(name: fieldName, kind: FormFieldKind.FOREIGNKEY, fkVal: some(value), fkOptions: options)
+
 # Disabled as a compiler bug causes this proc to be chosen also for string and int types instead of their appropriate overloads
 func toFormField*[T: enum](value: Option[enum], fieldName: string): FormField =
   ## Converts an enum or range field on Model into a select
@@ -92,6 +98,14 @@ func toFormField*[T: enum](value: Option[enum], fieldName: string): FormField =
   else:
     toFormField[T](value, fieldName)
 
+proc toForeignKeyField*[T: Model](value: T, fieldName: static string,
+    foreignKeyModelType: typedesc[Model]): FormField =
+  
+  let fkEntries = listAll(T)
+  var fkOptions = fkEntries.mapIt(ForeignKeyOption(id: it.id, name: it.name, value: it.id))
+
+  toForeignKeySelectField(value, fieldName, fkOptions)
+  
 func toFormField*[T](value: T, fieldName: string): FormField =
   ## Helper proc to enable converting non-optional fields into
   ## `FormField<fieldUtils/fieldTypes.html#FormField>`_ metadata
@@ -102,34 +116,18 @@ func toFormField*[T](value: T, fieldName: string): FormField =
       toFormField(none DateTime, fieldName)
   else:
     toFormField[T](some value, fieldName)
-
-proc toForeignKeyField*[T: Model](value: Option[int64], fieldName: static string,
-    foreignKeyModelType: typedesc[T]): FormField =
-  ## Helper proc to convert a foreign key field on a Model into a select
-  ## `FormField<fieldTypes.html#FormField>`_ with int value.
-  let fkEntries = listAll(T)
-  let fkOptions = fkEntries.mapIt(IntOption(name: $it, value: it.id))
-
-  toIntSelectField(value, fieldName, fkOptions)
-
-proc toForeignKeyField*[T: Model](value: int64, fieldName: static string,
-    foreignKeyModelType: typedesc[T]): FormField =
-  ## Helper proc to convert a non-optional foreign key field on a Model into a
-  ## select `FormField<fieldTypes.html#FormField>`_ with int value.
-  toForeignKeyField(some value, fieldName, T)
-
+  
 proc extractFields*[T: Model](model: T): seq[FormField] =
   ## Converts the fields on a model into a sequence of `FormField<fieldUtils/fieldTypes.html#FormField>`_.
   mixin toFormField
 
   result = @[]
   for name, value in model[].fieldPairs:
-    const isFkField = pragmasutils.hasCustomPragma(value,
-        fk) # Required due to ambiguiity between pragmasutils.hasCustomPragma and macros.hasCustomPragma
+    const isFkField = typeof(value) is Model
 
     var formField: FormField
     when isFkField:
-      formField = toSelectFormField(value, name, value.getCustomPragmaVal(fk)) # Last Param is a Model type
+      formField = toForeignKeyField(value, name, T)
 
     else:
       formField = toFormField(value, name)

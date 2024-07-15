@@ -1,4 +1,5 @@
 import std/[options]
+import norm/model
 import ../../filePathType
 
 ## Provides all types related to `FormField`
@@ -13,6 +14,12 @@ type StringOption* = object
   name*: string
   value*: string
 
+type ForeignKeyOption* = object
+  ## A single option of a select `FormField<#FormField>`_ with string values
+  id*: int64
+  name*: string
+  value*: int64
+
 type FormFieldKind* = enum
   ## The types of various HTML Form fields that can be generated to represent the fields on a norm model.
   STRING
@@ -23,6 +30,7 @@ type FormFieldKind* = enum
   INTSELECT
   STRSELECT
   FILE
+  FOREIGNKEY
 
 type FormField* = object
   ## The data used to render a HTML Form Field.
@@ -49,3 +57,6 @@ type FormField* = object
     strOptions*: seq[StringOption]
   of FILE:
     fileVal*: Option[FilePath]
+  of FOREIGNKEY:
+    fkVal*: Option[Model]
+    fkOptions*: seq[ForeignKeyOption]

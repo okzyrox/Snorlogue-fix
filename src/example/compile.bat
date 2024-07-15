@@ -1,0 +1,1 @@
+nim c -d:sqlite --threads:on --deepcopy:on example.nim

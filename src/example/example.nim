@@ -7,31 +7,26 @@ from os import `putEnv`
 putEnv("DB_HOST", "db.sqlite3")
 addHandler(newConsoleLogger(levelThreshold = lvlDebug))
 
-type CreatureFamily* = enum
-  HUMANOID
-  CELESTIAL
-  DEMONIC
-
-type Creature* = ref object of Model
+type User* = ref object of Model
   name*: string
-  description*: Option[string]
-  family*: CreatureFamily
 
-func dbType*(T: typedesc[CreatureFamily]): string = "INTEGER"
-func dbValue*(val: CreatureFamily): DbValue = dbValue(val.int)
-proc to*(dbVal: DbValue, T: typedesc[CreatureFamily]): CreatureFamily = dbVal.i.CreatureFamily
+type Item* = ref object of Model
+  name*: string
+  owner*: User
 
 withDb:
-  db.createTables(Creature())
+  db.createTables(User())
+  db.createTables(Item())
 
-proc `$`*(model: Creature): string = model.name
+proc `$`*(model: User): string = model.name
 
-proc afterCreateAction(connection: DbConn, model: Creature): void =
-  echo fmt"Just created Creature '{model.name}'!"
+proc `$`*(model: Item): string = model.name & " owned by " & $model.owner
+
 
 proc main() =
   var app: Prologue = newApp()
-  app.addCrudRoutes(Creature, afterCreateAction = afterCreateAction)
+  app.addCrudRoutes(User)
+  app.addCrudRoutes(Item)
   app.addAdminRoutes()
   app.run()
 

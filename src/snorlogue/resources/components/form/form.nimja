@@ -51,7 +51,10 @@ method="POST"
     {% elif field.kind == FormFieldKind.FILE %}
       {% let value = field.fileVal %}
       {% importnimja "resources/components/form/inputFields/fileField.nimja" %}
-
+    {% elif field.kind == FormFieldKind.FOREIGNKEY %}
+      {% let value = field.fkVal %}
+      {% let models = field.fkOptions %}
+      {% importnimja "resources/components/form/inputFields/foreignKeyField.nimja" %}
     {% endif %}
   {% endfor %}
   <input type="text" value="{{requestType.toLower()}}" name="request-type" class="d-none">
